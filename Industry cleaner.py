@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-csv_data = pd.read_csv (r'/Users/andrewkahn/Downloads/Example data.csv')
+csv_data = pd.read_csv (r'/Users/andrewkahn/Industry/Example data.csv')
 
 #print(csv_data.head(20))
 
@@ -26,9 +26,9 @@ for industry_list in array_data_industries_split:
 #print(unique_industry_list)
 #print(len(unique_industry_list))
 
-combined = list(zip(array_data_name, array_data_industries_split))
+name_and_industries = list(zip(array_data_name, array_data_industries_split))
 
-print(combined[:2])
+print(name_and_industries[:2])
 
 def combine(list_of_lists):
     output = []
@@ -43,14 +43,14 @@ def combine(list_of_lists):
                         match_vector.append(1)
                     else:
                         match_vector.append(0)
-            output.append(match_vector)
+        output.append(match_vector)
     return output
 
-complete = combine(combined)
+complete = combine(name_and_industries)
 
-print(complete[0:5])
+print(complete[0:30])
 
-
+#OLD CODE I DON'T NEED ANYMORE
 #def make_match_array(industry_list_of_lists):
 #    match_array = []
 #    for industry_list in industry_list_of_lists:
