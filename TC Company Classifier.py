@@ -1,4 +1,5 @@
-# import modules for data analysis
+# import libraries
+import sys
 import pandas as pd
 import numpy as np
 from pandas.plotting import scatter_matrix
@@ -16,13 +17,32 @@ from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 
-#import data from csv and drop unneeded columns
-csv_data = pd.read_csv(r'/Users/andrewkahn/Industry/Training Data.csv')
-df1 = csv_data.drop(columns = ['Total Funding Amount', 'Total Funding Amount Currency'])
+#import training data from csv and drop unneeded columns
+csv_data1 = pd.read_csv(r'/Users/andrewkahn/Industry/Training Data.csv')
+df1 = csv_data1.drop(columns = ['Total Funding Amount', 'Total Funding Amount Currency'])
+
+# import data to classify from csv
+# ensure that columns in training data and classification data are the same
+csv_data2 = pd.read_csv(r'/Users/andrewkahn/Industry/Classify Me.csv')
+df2 = csv_data2.drop(columns = ['Total Funding Amount', 'Total Funding Amount Currency'])
+
+# Adds column with a flag to indicate if a row is in the training data set or the classification data set
+dataset_indicator1 = []
+for index in range(len(df1['Industries'])):
+    dataset_indicator1.append('Training Data')
+df1['Dataset Indicator'] = dataset_indicator1
+
+dataset_indicator2 = []
+for index in range(len(df2['Industries'])):
+    dataset_indicator2.append('Data To Be Classified') 
+df2['Dataset Indicator'] = dataset_indicator2
+
+# union the training data and the classification data
+df = df1.append(df2)
 
 # create a list of of industries where each industry appears exactly once
 industry_string_split = []
-for industry_string in df1['Industries']:
+for industry_string in df['Industries']:
     industry_string_split.append(industry_string.split(','))
 unique_industry_list = []
 for industry_list in industry_string_split:
@@ -35,7 +55,7 @@ for industry_list in industry_string_split:
 
 # create a list of flag vectors to indicate industry affiliation
 flags = []
-for industry_string in df1['Industries']:
+for industry_string in df['Industries']:
     industry_string_split = industry_string.split(',')
     industry_string_split_stripped = []
     vector = []
@@ -52,12 +72,15 @@ for industry_string in df1['Industries']:
 flags_array = np.array(flags)
 flags_array_transposed = flags_array.T
 for index in range(len(flags_array_transposed)):
-    df1[unique_industry_list[index]] = flags_array_transposed[index]
+    df[unique_industry_list[index]] = flags_array_transposed[index]
 
-# Split the data into two sets. 
-# One set to be used for training. Other set to be used for validation for models.
-X = df1.drop(columns = ['Organization Name', 'Organization Name URL', 'Industries', 'Headquarters Location', 'Description', 'Last Funding Date', 'Classifier', 'Total Funding Amount Currency (in USD)']).values
-y = df1['Classifier'].values
+# Split out the training data from the data to be classified again 
+training_data = df[df['Dataset Indicator'] == 'Training Data']
+data_to_be_classified = df[df['Dataset Indicator'] == 'Data To Be Classified']
+
+# For the training data set, split the data into dependent variable (y) and independent variables (X)
+X = training_data.drop(columns = ['Organization Name', 'Organization Name URL', 'Industries', 'Headquarters Location', 'Description', 'Last Funding Date', 'Classifier', 'Total Funding Amount Currency (in USD)', 'Dataset Indicator']).values
+y = training_data['Classifier'].values
 
 # takes 20% of the rows in the array stored in X and puts them in X_validation
 # takes values from the same rows in the array stored in y and puts them in Y_validation
@@ -66,7 +89,6 @@ y = df1['Classifier'].values
 X_train, X_validation, Y_train, Y_validation = train_test_split(X, y, test_size=0.20, random_state=1)
 
 # Build several types of classificaiton models
-# Spot Check Algorithms
 models = []
 models.append(('LR', LogisticRegression(solver='liblinear', multi_class='ovr')))
 models.append(('LDA', LinearDiscriminantAnalysis()))
@@ -85,8 +107,10 @@ for name, model in models:
     names.append(name)
     print('%s: %f (%f)' % (name, cv_results.mean(), cv_results.std()))
 
-# First, From the printed output, identify the model for which cv_results.mean() is largest. That's the best model.
-# Then, make predictions on validation dataset using the best model, which in this case is LR
+# Create a function that chooses the best model (the one for which cv_results.mean() is highest) and uses it to run predictions on the classification data
+
+
+# Call the function on the validation data set and evaluate predictions
 model = LogisticRegression(solver='liblinear', multi_class='ovr')
 model.fit(X_train, Y_train)
 predictions = model.predict(X_validation)
@@ -95,3 +119,14 @@ predictions = model.predict(X_validation)
 print(accuracy_score(Y_validation, predictions))
 print(confusion_matrix(Y_validation, predictions))
 print(classification_report(Y_validation, predictions))
+
+# Call the function on the data to be classified
+data_to_be_classified_prepped = data_to_be_classified.drop(columns = ['Organization Name', 'Organization Name URL', 'Industries', 'Headquarters Location', 'Description', 'Last Funding Date', 'Classifier', 'Total Funding Amount Currency (in USD)', 'Dataset Indicator']).values
+classification = model.predict(data_to_be_classified_prepped)
+
+# Add the predictions to classification dataset
+data_to_be_classified['Classifier'] = classification
+output = data_to_be_classified.loc[:, ['Classifier', 'Organization Name', 'Industries', 'Description', 'Headquarters Location', 'Organization Name URL', 'Total Funding Amount Currency (in USD)', 'Last Funding Date']]
+
+# return new dataframe as a csv
+output.to_csv(r'/Users/andrewkahn/Industry/Output.csv', index=False)
