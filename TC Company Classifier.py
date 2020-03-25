@@ -18,12 +18,12 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
 
 #import training data from csv and drop unneeded columns
-csv_data1 = pd.read_csv(r'/Users/andrewkahn/Industry/Training Data.csv')
+csv_data1 = pd.read_csv(sys.argv[1])
 df1 = csv_data1.drop(columns = ['Total Funding Amount', 'Total Funding Amount Currency'])
 
 # import data to classify from csv
 # ensure that columns in training data and classification data are the same
-csv_data2 = pd.read_csv(r'/Users/andrewkahn/Industry/Classify Me.csv')
+csv_data2 = pd.read_csv(sys.argv[2])
 df2 = csv_data2.drop(columns = ['Total Funding Amount', 'Total Funding Amount Currency'])
 
 # Adds column with a flag to indicate if a row is in the training data set or the classification data set
@@ -70,7 +70,7 @@ for industry_string in df['Industries']:
 
 # add flag vectors to DataFrame
 flags_array = np.array(flags)
-flags_array_transposed = flags_array.T
+flags_array_transposed = flags_array.transpose()
 for index in range(len(flags_array_transposed)):
     df[unique_industry_list[index]] = flags_array_transposed[index]
 
@@ -105,7 +105,7 @@ for name, model in models:
     cv_results = cross_val_score(model, X_train, Y_train, cv=kfold, scoring='accuracy')
     results.append(cv_results)
     names.append(name)
-    print('%s: %f (%f)' % (name, cv_results.mean(), cv_results.std()))
+    #print('%s: %f (%f)' % (name, cv_results.mean(), cv_results.std()))
 
 # Create a function that chooses the best model (the one for which cv_results.mean() is highest) and uses it to run predictions on the classification data
 
@@ -125,8 +125,8 @@ data_to_be_classified_prepped = data_to_be_classified.drop(columns = ['Organizat
 classification = model.predict(data_to_be_classified_prepped)
 
 # Add the predictions to classification dataset
-data_to_be_classified['Classifier'] = classification
+data_to_be_classified.loc[:, 'Classifier'] = classification
 output = data_to_be_classified.loc[:, ['Classifier', 'Organization Name', 'Industries', 'Description', 'Headquarters Location', 'Organization Name URL', 'Total Funding Amount Currency (in USD)', 'Last Funding Date']]
 
 # return new dataframe as a csv
-output.to_csv(r'/Users/andrewkahn/Industry/Output.csv', index=False)
+output.to_csv(sys.argv[3], index=False)
