@@ -1,1 +1,6 @@
 python TC\ Company\ Classifier.py '/Users/andrewkahn/Industry/Training Data.csv' '/Users/andrewkahn/Industry/Classify Me.csv' '/Users/andrewkahn/Industry/Output.csv'
+
+
+
+
+*Other notes: to run the command above, my working directory must contain the script.
