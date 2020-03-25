@@ -1,0 +1,1 @@
+python TC\ Company\ Classifier.py '/Users/andrewkahn/Industry/Training Data.csv' '/Users/andrewkahn/Industry/Classify Me.csv' '/Users/andrewkahn/Industry/Output.csv'
